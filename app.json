@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "ChargingWallpaper",
+    "slug": "ChargingWallpaper",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "chargingwallpaper",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.yourname.chargingwallpaper",
+      "infoPlist": {
+        "UIStatusBarHidden": true,
+        "UIRequiresFullScreen": true,
+        "NSCameraUsageDescription": "Access to the camera is required for the torch function",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "plugins": [
+      [
+        "expo-av",
+        {
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#ffffff",
+          "sounds": []
+        }
+      ]
+    ],
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "29c2c3dc-56e1-4430-81d7-faf292715dd3"
+      }
+    }
+  }
+}
