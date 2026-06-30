@@ -28,7 +28,14 @@ jobs:
         run: npx expo-doctor
 
       - name: Prebuild iOS
-        run: npx expo prebuild --platform ios --no-install
+        run: npx expo prebuild --platform ios
+
+      - name: Show iOS files
+        run: |
+          echo "===== ios ====="
+          ls -la ios
+          echo "===== Pods ====="
+          ls -la ios/Pods || true
 
       - name: Build app (No Code Signing)
         run: |
