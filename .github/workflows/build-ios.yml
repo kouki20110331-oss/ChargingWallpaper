@@ -30,6 +30,17 @@ jobs:
       - name: Prebuild iOS
         run: npx expo prebuild --platform ios --no-install
 
+      - name: Build app (No Code Signing)
+        run: |
+          cd ios
+          xcodebuild \
+            -workspace ChargingWallpaper.xcworkspace \
+            -scheme ChargingWallpaper \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
       - name: Upload iOS Project
         uses: actions/upload-artifact@v4
         with:
