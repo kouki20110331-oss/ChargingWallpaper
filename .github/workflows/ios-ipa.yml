@@ -1,14 +1,11 @@
 name: Build iOS IPA (Expo)
-
 on:
   workflow_dispatch:
   push:
     branches: [main]
-
 jobs:
   build-ios:
     runs-on: macos-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -27,7 +24,6 @@ jobs:
       - name: Install CocoaPods
         run: sudo gem install cocoapods
 
-      # Expo native project生成
       - name: Prebuild iOS project
         run: npx expo prebuild --platform ios --clean
 
@@ -35,44 +31,56 @@ jobs:
         working-directory: ios
         run: pod install
 
-      # ビルド（unsignedに近い形）
+      - name: Get scheme name
+        working-directory: ios
+        run: |
+          SCHEME=$(xcodebuild -workspace ChargingWallpaper.xcworkspace -list -json | python3 -c "import sys,json; data=json.load(sys.stdin); print(data['workspace']['schemes'][0])")
+          echo "SCHEME=$SCHEME" >> $GITHUB_ENV
+          echo "Using scheme: $SCHEME"
+
       - name: Build archive
         working-directory: ios
         run: |
           xcodebuild \
-            -workspace *.xcworkspace \
-            -scheme $(xcodebuild -list -json | jq -r '.workspace.schemes[0]') \
+            -workspace ChargingWallpaper.xcworkspace \
+            -scheme "$SCHEME" \
             -configuration Release \
             -archivePath build/App.xcarchive \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
             archive
 
       - name: Export IPA
         working-directory: ios
         run: |
           mkdir -p export
-
           cat > ExportOptions.plist <<EOF
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
             <key>method</key>
-            <string>development</string>
+            <string>ad-hoc</string>
             <key>signingStyle</key>
-            <string>automatic</string>
+            <string>manual</string>
             <key>stripSwiftSymbols</key>
             <true/>
             <key>compileBitcode</key>
             <false/>
+            <key>signingCertificate</key>
+            <string>iPhone Distribution</string>
           </dict>
           </plist>
           EOF
-
           xcodebuild \
             -exportArchive \
             -archivePath build/App.xcarchive \
             -exportPath export \
-            -exportOptionsPlist ExportOptions.plist
+            -exportOptionsPlist ExportOptions.plist \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
