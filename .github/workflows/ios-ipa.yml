@@ -1,0 +1,81 @@
+name: Build iOS IPA (Expo)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Expo CLI
+        run: npm install -g expo-cli eas-cli
+
+      - name: Install CocoaPods
+        run: sudo gem install cocoapods
+
+      # Expo native project生成
+      - name: Prebuild iOS project
+        run: npx expo prebuild --platform ios --clean
+
+      - name: Install pods
+        working-directory: ios
+        run: pod install
+
+      # ビルド（unsignedに近い形）
+      - name: Build archive
+        working-directory: ios
+        run: |
+          xcodebuild \
+            -workspace *.xcworkspace \
+            -scheme $(xcodebuild -list -json | jq -r '.workspace.schemes[0]') \
+            -configuration Release \
+            -archivePath build/App.xcarchive \
+            archive
+
+      - name: Export IPA
+        working-directory: ios
+        run: |
+          mkdir -p export
+
+          cat > ExportOptions.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>development</string>
+            <key>signingStyle</key>
+            <string>automatic</string>
+            <key>stripSwiftSymbols</key>
+            <true/>
+            <key>compileBitcode</key>
+            <false/>
+          </dict>
+          </plist>
+          EOF
+
+          xcodebuild \
+            -exportArchive \
+            -archivePath build/App.xcarchive \
+            -exportPath export \
+            -exportOptionsPlist ExportOptions.plist
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-ipa
+          path: ios/export/*.ipa

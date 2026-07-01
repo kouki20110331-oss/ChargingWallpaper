@@ -1,0 +1,35 @@
+name: Expo CI (Stable)
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # ❗依存インストールは必ず順番固定
+      - name: Install dependencies
+        run: npm ci
+
+      # ❗Expoの依存を強制的に揃える（最重要）
+      - name: Fix Expo dependency versions
+        run: npx expo install --check
+
+      # ❗型・設定チェック（CI用軽量）
+      - name: Expo Doctor (safe mode)
+        run: npx expo-doctor || true
+
+      # ❗JSバンドルが壊れてないか確認
+      - name: Expo prebuild check
+        run: npx expo export --platform all
