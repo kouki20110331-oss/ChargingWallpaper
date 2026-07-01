@@ -1,0 +1,53 @@
+name: Build IPA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Expo CLI
+        run: npm install -g expo-cli
+
+      - name: Install EAS CLI
+        run: npm install -g eas-cli
+
+      - name: Expo Doctor
+        run: npx expo-doctor
+
+      - name: Prebuild iOS
+        run: npx expo prebuild --platform ios
+
+      - name: Show iOS files
+        run: |
+          ls -la ios
+
+      - name: Archive App
+        run: |
+          cd ios
+          xcodebuild \
+            -workspace ChargingWallpaper.xcworkspace \
+            -scheme ChargingWallpaper \
+            -configuration Release \
+            -sdk iphoneos \
+            -archivePath build/ChargingWallpaper.xcarchive \
+            archive \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Upload Archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: ChargingWallpaper-xcarchive
+          path: ios/build/ChargingWallpaper.xcarchive
